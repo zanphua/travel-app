@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
-import type { Trip } from "../types";
+import type { Activity, Expense, ItineraryDay, Trip } from "../types";
 import { STORAGE_KEYS, loadFromStorage, saveToStorage } from "../utils/storage";
 import { eachDateInRange } from "../utils/dates";
 import { useItinerary } from "./useItinerary";
@@ -10,8 +10,8 @@ export type NewTripInput = Omit<Trip, "id" | "createdAt">;
 
 export function useTrips() {
   const [trips, setTrips] = useState<Trip[]>([]);
-  const { createDaysForTrip, deleteDaysForTrip } = useItinerary();
-  const { deleteExpensesForTrip } = useExpenses();
+  const { createDaysForTrip, deleteDaysForTrip, importDays } = useItinerary();
+  const { deleteExpensesForTrip, importExpenses } = useExpenses();
 
   useEffect(() => {
     setTrips(loadFromStorage<Trip>(STORAGE_KEYS.trips));
@@ -53,7 +53,16 @@ export function useTrips() {
     [trips, persist, deleteDaysForTrip, deleteExpensesForTrip]
   );
 
+  const addJoinedTrip = useCallback(
+    (trip: Trip, days: ItineraryDay[], activities: Activity[], expenses: Expense[]) => {
+      persist([...trips.filter((t) => t.id !== trip.id), trip]);
+      importDays(days, activities);
+      importExpenses(expenses);
+    },
+    [trips, persist, importDays, importExpenses]
+  );
+
   const getTrip = useCallback((id: string) => trips.find((t) => t.id === id), [trips]);
 
-  return { trips, addTrip, updateTrip, deleteTrip, getTrip };
+  return { trips, addTrip, updateTrip, deleteTrip, addJoinedTrip, getTrip };
 }

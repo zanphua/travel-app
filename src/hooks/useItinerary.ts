@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
-import type { Activity, ItineraryDay } from "../types";
+import type { Activity, ItineraryDay, Trip } from "../types";
 import { STORAGE_KEYS, loadFromStorage, saveToStorage } from "../utils/storage";
 import { buildMapsUrl } from "../utils/mapsUrl";
+import { stampUpdate } from "../utils/member";
+import { backend } from "../utils/backend";
 
 export type NewActivityInput = Omit<Activity, "id" | "googleMapsUrl"> & {
   googleMapsUrl?: string;
@@ -12,14 +14,31 @@ function dayLabel(index: number): string {
   return `Day ${index + 1}`;
 }
 
-export function useItinerary(tripId?: string) {
+function writeThrough(trip: Trip | undefined, table: "itinerary_days" | "activities", row: ItineraryDay | Activity) {
+  if (trip?.isShared && trip.cloudId) {
+    backend.writeRow(trip.cloudId, table, row).catch(() => {});
+  }
+}
+
+function deleteThrough(trip: Trip | undefined, table: "itinerary_days" | "activities", rowId: string) {
+  if (trip?.isShared && trip.cloudId) {
+    backend.deleteRow(trip.cloudId, table, rowId).catch(() => {});
+  }
+}
+
+export function useItinerary(trip?: Trip) {
+  const tripId = trip?.id;
   const [days, setDays] = useState<ItineraryDay[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     setDays(loadFromStorage<ItineraryDay>(STORAGE_KEYS.days));
     setActivities(loadFromStorage<Activity>(STORAGE_KEYS.activities));
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const persistDays = useCallback((next: ItineraryDay[]) => {
     setDays(next);
@@ -45,11 +64,26 @@ export function useItinerary(tripId?: string) {
     [persistDays]
   );
 
+  const importDays = useCallback(
+    (importedDays: ItineraryDay[], importedActivities: Activity[]) => {
+      const allDays = loadFromStorage<ItineraryDay>(STORAGE_KEYS.days);
+      const allActivities = loadFromStorage<Activity>(STORAGE_KEYS.activities);
+      const dayIds = new Set(importedDays.map((d) => d.id));
+      const activityIds = new Set(importedActivities.map((a) => a.id));
+      persistDays([...allDays.filter((d) => !dayIds.has(d.id)), ...importedDays]);
+      persistActivities([...allActivities.filter((a) => !activityIds.has(a.id)), ...importedActivities]);
+    },
+    [persistDays, persistActivities]
+  );
+
   const updateDayLabel = useCallback(
     (dayId: string, label: string) => {
-      persistDays(days.map((d) => (d.id === dayId ? { ...d, label } : d)));
+      const stamped = stampUpdate({ label });
+      persistDays(days.map((d) => (d.id === dayId ? { ...d, ...stamped } : d)));
+      const updated = days.find((d) => d.id === dayId);
+      if (updated) writeThrough(trip, "itinerary_days", { ...updated, ...stamped });
     },
-    [days, persistDays]
+    [days, persistDays, trip]
   );
 
   const deleteDaysForTrip = useCallback(
@@ -64,19 +98,21 @@ export function useItinerary(tripId?: string) {
 
   const addActivity = useCallback(
     (input: NewActivityInput) => {
-      const activity: Activity = {
+      const activity: Activity = stampUpdate({
         ...input,
         id: uuid(),
         googleMapsUrl: input.googleMapsUrl?.trim() || buildMapsUrl(input.placeName),
-      };
+      });
       persistActivities([...activities, activity]);
+      writeThrough(trip, "activities", activity);
       return activity;
     },
-    [activities, persistActivities]
+    [activities, persistActivities, trip]
   );
 
   const updateActivity = useCallback(
     (id: string, updates: Partial<NewActivityInput>) => {
+      let updatedRow: Activity | null = null;
       persistActivities(
         activities.map((a) => {
           if (a.id !== id) return a;
@@ -86,18 +122,22 @@ export function useItinerary(tripId?: string) {
             (updates.placeName && updates.placeName !== a.placeName
               ? buildMapsUrl(updates.placeName)
               : merged.googleMapsUrl);
-          return { ...merged, googleMapsUrl };
+          const stamped = stampUpdate({ ...merged, googleMapsUrl });
+          updatedRow = stamped;
+          return stamped;
         })
       );
+      if (updatedRow) writeThrough(trip, "activities", updatedRow);
     },
-    [activities, persistActivities]
+    [activities, persistActivities, trip]
   );
 
   const deleteActivity = useCallback(
     (id: string) => {
       persistActivities(activities.filter((a) => a.id !== id));
+      deleteThrough(trip, "activities", id);
     },
-    [activities, persistActivities]
+    [activities, persistActivities, trip]
   );
 
   const tripDays = tripId ? days.filter((d) => d.tripId === tripId).sort((a, b) => a.date.localeCompare(b.date)) : [];
@@ -118,10 +158,12 @@ export function useItinerary(tripId?: string) {
     tripDays,
     activitiesForDay,
     createDaysForTrip,
+    importDays,
     updateDayLabel,
     deleteDaysForTrip,
     addActivity,
     updateActivity,
     deleteActivity,
+    refresh,
   };
 }

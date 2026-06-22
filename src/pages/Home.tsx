@@ -5,12 +5,12 @@ import { useTrips } from "../hooks/useTrips";
 import { useItinerary } from "../hooks/useItinerary";
 import { useExpenses } from "../hooks/useExpenses";
 import { TripCard } from "../components/trips/TripCard";
-import { TripForm, type TripFormValues } from "../components/trips/TripForm";
+import { TripForm, type TripFormValues, type JoinedTripResult } from "../components/trips/TripForm";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function Home() {
   const navigate = useNavigate();
-  const { trips, addTrip } = useTrips();
+  const { trips, addTrip, addJoinedTrip } = useTrips();
   const { activities } = useItinerary();
   const { expenses } = useExpenses();
   const [formOpen, setFormOpen] = useState(false);
@@ -19,6 +19,12 @@ export function Home() {
     const trip = addTrip(values);
     setFormOpen(false);
     navigate(`/trip/${trip.id}`);
+  };
+
+  const handleJoined = (result: JoinedTripResult) => {
+    addJoinedTrip(result.trip, result.days, result.activities, result.expenses);
+    setFormOpen(false);
+    navigate(`/trip/${result.trip.id}`);
   };
 
   return (
@@ -59,7 +65,13 @@ export function Home() {
         </main>
       )}
 
-      <TripForm isOpen={formOpen} onClose={() => setFormOpen(false)} onSave={handleSave} />
+      <TripForm
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSave={handleSave}
+        allowJoin={trips.length > 0}
+        onJoined={handleJoined}
+      />
     </div>
   );
 }

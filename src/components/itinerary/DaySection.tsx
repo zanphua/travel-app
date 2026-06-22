@@ -10,6 +10,7 @@ interface DaySectionProps {
   onAddActivity: () => void;
   onEditActivity: (activity: Activity) => void;
   onDeleteActivity: (activityId: string) => void;
+  memberNames?: Record<string, string>;
 }
 
 export function DaySection({
@@ -19,6 +20,7 @@ export function DaySection({
   onAddActivity,
   onEditActivity,
   onDeleteActivity,
+  memberNames,
 }: DaySectionProps) {
   const [editingLabel, setEditingLabel] = useState(false);
   const [draftLabel, setDraftLabel] = useState(day.label);
@@ -62,6 +64,7 @@ export function DaySection({
             activity={activity}
             onEdit={() => onEditActivity(activity)}
             onDelete={() => onDeleteActivity(activity.id)}
+            updatedByName={activity.updatedBy ? memberNames?.[activity.updatedBy] : undefined}
           />
         ))}
       </div>

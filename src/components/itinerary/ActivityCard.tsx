@@ -3,14 +3,16 @@ import { MapPin } from "lucide-react";
 import type { Activity } from "../../types";
 import { activityCategories } from "../../utils/categories";
 import { SwipeableRow } from "../ui/SwipeableRow";
+import { MemberBadge } from "../ui/MemberBadge";
 
 interface ActivityCardProps {
   activity: Activity;
   onEdit: () => void;
   onDelete: () => void;
+  updatedByName?: string;
 }
 
-export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) {
+export function ActivityCard({ activity, onEdit, onDelete, updatedByName }: ActivityCardProps) {
   const [expanded, setExpanded] = useState(false);
   const meta = activityCategories[activity.category];
 
@@ -29,6 +31,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
           )}
           <span aria-hidden="true">{meta.emoji}</span>
           <span className="flex-1 truncate font-medium text-slate">{activity.title}</span>
+          {updatedByName && <MemberBadge displayName={updatedByName} />}
         </div>
         {activity.notes && (
           <p className={`text-sm text-muted ${expanded ? "" : "truncate"}`}>{activity.notes}</p>

@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Plus } from "lucide-react";
 import type { Trip, Expense } from "../types";
 import { useExpenses, type NewExpenseInput } from "../hooks/useExpenses";
+import { useRealtimeSync } from "../hooks/useRealtimeSync";
+import { useTripSharing } from "../hooks/useTripSharing";
 import { ExpenseSummary } from "../components/expenses/ExpenseSummary";
 import { ExpenseRow } from "../components/expenses/ExpenseRow";
 import { ExpenseForm, type ExpenseFormValues } from "../components/expenses/ExpenseForm";
@@ -11,7 +13,17 @@ import { formatShortDate } from "../utils/dates";
 
 export function ExpensesTab() {
   const { trip } = useOutletContext<{ trip: Trip }>();
-  const { tripExpenses, addExpense, updateExpense, deleteExpense } = useExpenses(trip.id);
+  const { tripExpenses, addExpense, updateExpense, deleteExpense, refresh } = useExpenses(trip);
+  useRealtimeSync(trip, refresh);
+  const { loadMembers } = useTripSharing();
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!trip.isShared || !trip.cloudId) return;
+    loadMembers(trip.cloudId).then((members) => {
+      setMemberNames(Object.fromEntries(members.map((m) => [m.memberId, m.displayName])));
+    });
+  }, [trip.isShared, trip.cloudId, loadMembers]);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -61,6 +73,7 @@ export function ExpensesTab() {
                       setFormOpen(true);
                     }}
                     onDelete={() => deleteExpense(expense.id)}
+                    updatedByName={expense.updatedBy ? memberNames[expense.updatedBy] : undefined}
                   />
                 ))}
               </div>

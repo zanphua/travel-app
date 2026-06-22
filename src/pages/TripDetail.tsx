@@ -4,6 +4,7 @@ import { ChevronLeft, Pencil } from "lucide-react";
 import { useTrips } from "../hooks/useTrips";
 import { TripForm, type TripFormValues } from "../components/trips/TripForm";
 import { formatDateRange } from "../utils/dates";
+import type { Trip } from "../types";
 
 function tabKey(tripId: string) {
   return `travel_app:lastTab:${tripId}`;
@@ -37,6 +38,10 @@ export function TripDetail() {
   const handleSave = (values: TripFormValues) => {
     updateTrip(tripId, values);
     setEditOpen(false);
+  };
+
+  const handleShared = (updates: Partial<Trip>) => {
+    updateTrip(tripId, updates);
   };
 
   const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -81,7 +86,13 @@ export function TripDetail() {
 
       <Outlet context={{ trip }} />
 
-      <TripForm isOpen={editOpen} onClose={() => setEditOpen(false)} onSave={handleSave} initialTrip={trip} />
+      <TripForm
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSave={handleSave}
+        initialTrip={trip}
+        onShared={handleShared}
+      />
     </div>
   );
 }

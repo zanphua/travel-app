@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import type { Trip } from "../../types";
 import { formatDateRange, tripDurationDays } from "../../utils/dates";
 
@@ -21,7 +22,10 @@ export function TripCard({ trip, activityCount, totalExpenses, onClick }: TripCa
         {trip.coverEmoji}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-slate">{trip.name}</p>
+        <p className="flex items-center gap-1.5 truncate font-semibold text-slate">
+          {trip.name}
+          {trip.isShared && <Users size={14} className="shrink-0 text-sky" aria-label="Shared trip" />}
+        </p>
         <p className="truncate text-sm text-muted">{trip.destination}</p>
         <p className="mt-1 text-xs text-muted">
           {formatDateRange(trip.startDate, trip.endDate)} · {days} {days === 1 ? "day" : "days"}

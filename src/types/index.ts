@@ -7,9 +7,27 @@ export interface Trip {
   coverEmoji: string;
   currency: string;
   createdAt: string;
+  isShared?: boolean;
+  cloudId?: string;
+  inviteCode?: string;
 }
 
-export interface ItineraryDay {
+export interface SyncMeta {
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface DeviceMember {
+  id: string;
+  displayName: string;
+}
+
+export interface CloudMember {
+  memberId: string;
+  displayName: string;
+}
+
+export interface ItineraryDay extends Partial<SyncMeta> {
   id: string;
   tripId: string;
   date: string;
@@ -24,7 +42,7 @@ export type ActivityCategory =
   | "shopping"
   | "other";
 
-export interface Activity {
+export interface Activity extends Partial<SyncMeta> {
   id: string;
   dayId: string;
   tripId: string;
@@ -44,7 +62,7 @@ export type ExpenseCategory =
   | "shopping"
   | "other";
 
-export interface Expense {
+export interface Expense extends Partial<SyncMeta> {
   id: string;
   tripId: string;
   date: string;

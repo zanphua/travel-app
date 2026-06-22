@@ -1,18 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { CalendarDays } from "lucide-react";
 import type { Trip, Activity } from "../types";
 import { useItinerary, type NewActivityInput } from "../hooks/useItinerary";
+import { useRealtimeSync } from "../hooks/useRealtimeSync";
+import { useTripSharing } from "../hooks/useTripSharing";
 import { DaySection } from "../components/itinerary/DaySection";
 import { ActivityForm, type ActivityFormValues } from "../components/itinerary/ActivityForm";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function ItineraryTab() {
   const { trip } = useOutletContext<{ trip: Trip }>();
-  const { tripDays, activitiesForDay, updateDayLabel, addActivity, updateActivity, deleteActivity } = useItinerary(
-    trip.id
-  );
+  const { tripDays, activitiesForDay, updateDayLabel, addActivity, updateActivity, deleteActivity, refresh } =
+    useItinerary(trip);
+  useRealtimeSync(trip, refresh);
+  const { loadMembers } = useTripSharing();
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [formState, setFormState] = useState<{ dayId: string; activity: Activity | null } | null>(null);
+
+  useEffect(() => {
+    if (!trip.isShared || !trip.cloudId) return;
+    loadMembers(trip.cloudId).then((members) => {
+      setMemberNames(Object.fromEntries(members.map((m) => [m.memberId, m.displayName])));
+    });
+  }, [trip.isShared, trip.cloudId, loadMembers]);
 
   const handleSave = (values: ActivityFormValues) => {
     if (!formState) return;
@@ -44,6 +55,7 @@ export function ItineraryTab() {
           onAddActivity={() => setFormState({ dayId: day.id, activity: null })}
           onEditActivity={(activity) => setFormState({ dayId: day.id, activity })}
           onDeleteActivity={(activityId) => deleteActivity(activityId)}
+          memberNames={memberNames}
         />
       ))}
 

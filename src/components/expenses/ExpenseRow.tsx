@@ -2,14 +2,16 @@ import type { Expense } from "../../types";
 import { expenseCategories } from "../../utils/categories";
 import { formatShortDate } from "../../utils/dates";
 import { SwipeableRow } from "../ui/SwipeableRow";
+import { MemberBadge } from "../ui/MemberBadge";
 
 interface ExpenseRowProps {
   expense: Expense;
   onEdit: () => void;
   onDelete: () => void;
+  updatedByName?: string;
 }
 
-export function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
+export function ExpenseRow({ expense, onEdit, onDelete, updatedByName }: ExpenseRowProps) {
   const meta = expenseCategories[expense.category];
 
   return (
@@ -25,6 +27,7 @@ export function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
             {expense.paidBy && ` · ${expense.paidBy}`}
           </p>
         </div>
+        {updatedByName && <MemberBadge displayName={updatedByName} />}
         <p className="shrink-0 font-mono text-sm font-semibold text-slate">
           {expense.currency} {expense.amount.toFixed(2)}
         </p>
