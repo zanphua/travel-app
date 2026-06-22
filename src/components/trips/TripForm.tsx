@@ -199,7 +199,7 @@ export function TripForm({ isOpen, onClose, onSave, initialTrip, allowJoin, onJo
       )}
 
       {mode === "join" && showJoinTab ? (
-        <form onSubmit={handleJoinSubmit} className="flex h-full flex-col">
+        <form onSubmit={handleJoinSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate">Invite code</label>
@@ -239,7 +239,7 @@ export function TripForm({ isOpen, onClose, onSave, initialTrip, allowJoin, onJo
           </div>
         </form>
       ) : (
-        <form onSubmit={handleSubmit} className="flex h-full flex-col">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate">Trip name</label>

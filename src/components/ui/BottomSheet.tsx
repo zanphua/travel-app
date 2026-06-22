@@ -82,7 +82,7 @@ export function BottomSheet({ isOpen, onClose, title, children, heightClass = "h
             ✕
           </button>
         </div>
-        <div className="scroll-touch flex-1 overflow-y-auto">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
       </div>
     </div>
   );
